@@ -1,0 +1,339 @@
+;Snake
+
+
+;Controls
+;	A (7) -> Turn Left
+;	D (9) -> Turn Right
+;
+
+;v0, v1 -> x1,y1
+;v2, v3 -> x2,y2
+
+
+;v0, v1, v2 volatile
+
+
+
+;v3, v5 scratch
+
+;va, vb -> x, y snake head position
+;v9 -> direction 0->3
+;vc, vd -> x,y apple location
+
+
+.setup
+	;call drawBoarder
+	jmp doneReset
+.reset
+	call drawDed
+	wtk v0
+.doneReset
+	
+	mov ptr, 0x420
+	mov v0, 0x80
+	dump v0
+	
+	clr
+	call drawBoarder
+	wtk v0
+	mov v0, 10
+	mov v1, 10
+	mov v2, 0
+	call writeSnakeTail
+
+	mov v0, 11
+	mov v1, 10
+	mov v2, 1
+	call writeSnakeTail
+	
+	mov v0, 12
+	mov v1, 10
+	mov v2, 2
+	call writeSnakeTail
+	
+	mov v0, 13
+	mov v1, 10
+	mov v2, 3
+	call writeSnakeTail
+	
+	mov va, 13
+	mov vb, 10
+	
+	mov ve, 4
+	
+	call drawSnake
+	mov v9,0
+	
+	call initApple
+	
+.mainLoop
+	mov v5, dly
+	sne v5, 0
+	call setDirection
+	
+	call drawRemoveLast
+	call updateSnake
+	call drawHead
+	
+	;sne vf, 1
+	;call eatApple
+	;sne vf, 1
+	;jmp reset
+	
+	jmp mainLoop
+
+.setDirection
+	mov v8, v9
+
+	mov v3, 0x03
+	mov v5, 1
+	
+	mov v4, 9
+	snk v4
+	add v9, 1
+	and v9, v3
+	
+	mov v4, 7
+	snk v4
+	sub v9, v5
+	and v9, v3
+	
+	mov ptr, 0x700
+	mov v0, v9
+	;dump v0
+	
+	se v8,v9
+	call resetTimer
+	ret
+
+.eatApple
+	;se va, vc
+	;jmp eatAppleReturn
+	;se vb, vd
+	;jmp eatAppleReturn
+	mov vf, 0
+	
+	mov ptr, 0x420
+	draw vc,vd,1
+	call addSnake
+.eatAppleReturn
+	ret
+
+.initApple
+	rnd vc,0x3e
+	;add vc, 1
+	rnd vd,0x1e
+	;add vd, 1
+	
+	mov ptr, 0x420
+	draw vc, vd, 1
+	ret
+
+.drawDed
+	mov v0, 0xd
+	spt v0
+	mov v0, 25
+	mov v1, 3
+	draw v0, v1, 5
+	
+	mov v0, 35
+	draw v0, v1, 5
+	
+	mov v0, 0xe
+	spt v0
+	mov v0, 30
+	draw v0, v1, 5
+	ret
+	
+.resetTimer
+	mov v8, 255
+	mov dly, v8
+	ret
+	
+.clearSnake
+	call readSnakeTail
+	
+	mov v3,v0
+	or v3,v1
+	sne v3, 0
+	jmp clearSnakeReturn
+	mov v0, 0
+	mov v1, 0
+	
+	call writeSnakeTail
+	jmp clearSnake
+.clearSnakeReturn
+	ret
+	
+.updateSnakePos
+	
+	mov v3, 1
+	sne v9, 0
+	add va, 1
+	
+	sne v9, 1
+	add vb, 1
+	
+	sne v9, 2
+	sub va, v3
+	
+	sne v9, 3
+	sub vb, v3
+	ret
+
+.updateSnake
+	call updateSnakePos
+
+	mov v2, 1
+	mov v5, 1
+.arrayLoop
+	call readSnakeTail
+	sub v2, v5
+	call writeSnakeTail
+	add v2, 2
+	se v2, ve
+	jmp arrayLoop
+	
+	mov v0, va
+	mov v1, vb
+	sub v2, v5
+	call writeSnakeTail
+	ret
+
+.addSnake
+	mov v2, ve
+	mov v5, 2
+.arrayLoop1
+	call readSnakeTail
+	add v2, 1
+	call writeSnakeTail
+	sub v2, v5
+	se v2, 0
+	jmp arrayLoop1
+	ret
+
+.drawRemoveLast
+	mov v2, 0
+	call readSnakeTail
+	
+	mov ptr 0x420
+	draw v0, v1, 1
+	ret
+	
+	
+.drawHead
+	mov ptr 0x420
+	draw va, vb, 1
+	ret
+	
+
+	
+.drawBoarder
+	mov ptr,0x400
+	mov v0,0xFF
+	dump v0
+	mov v0, 0
+	mov v1, 0
+	call boarderHorizontal
+	mov v0, 0
+	mov v1, 31
+	call boarderHorizontal
+	
+	mov ptr 0x401
+	mov v0, 0x80
+	mov v1, 0x80
+	mov v2, 0x80
+	mov v3, 0x80
+	dump v3
+	mov v0,0
+	mov v1,0
+	call boarderVertical
+	mov v0,63
+	mov v1,0
+	call boarderVertical
+	ret
+.boarderHorizontal
+	draw v0,v1,1
+	add v0,8
+	se v0,64
+	jmp boarderHorizontal
+	ret
+	
+.boarderVertical
+	draw v0,v1,4
+	add v1,4
+	se v1,32
+	jmp boarderVertical
+	ret
+	
+;v2 -> index
+;v0,v1 -> x,y
+; uses v3 as a scratch
+.readSnakeTail
+	mov v3, v2
+	shl v3
+	mov ptr, 0x600
+	add ptr, v3
+	load v1
+	ret
+	
+.writeSnakeTail
+	mov v3, v2
+	shl v3
+	mov ptr, 0x600
+	add ptr, v3
+	dump v1
+	ret
+
+.drawSnake
+	mov ptr 0x420
+	mov v2, 0
+.drawSnakeLoop
+	call readSnakeTail
+	
+	mov v3,v0
+	or v3,v1
+	sne v3, 0
+	jmp snakeReturn
+	
+	mov ptr, 0x420
+	draw v0, v1, 1
+	add v2, 1
+	
+	jmp drawSnakeLoop
+.snakeReturn
+	ret
+
+
+;v0, v1 -> x1,y1
+;v2, v3 -> x2,y2
+.drawLine
+	mov ptr,0x500
+	mov v4, 1
+	dump v4
+	sne v0, v2
+	call drawVertical
+	sne v1, v3
+	call drawHorizontal
+	ret
+	
+.drawHorizontal
+	draw v0, v1, 1
+	add v0, 1
+	se v0, v2
+	jmp drawHorizontal
+	ret
+
+.drawVertical
+	add v1, 1
+	draw v0, v1, 1
+	se v1, v3
+	jmp drawVertical
+	ret
+	
+	
+	
+	
+
+
+	
