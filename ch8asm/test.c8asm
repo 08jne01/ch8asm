@@ -1,0 +1,16 @@
+.start
+mov ptr, x
+mov v0, 0
+mov v1, 1
+draw v0, v1, 1
+mov v0, 0xff
+mov dly, v0
+.wait
+mov v0, dly
+se v0, 0
+jmp wait
+jmp start
+.x
+data 0xff
+.y
+data 0x80 0x80 0x80 0x80

@@ -13,21 +13,32 @@ static void printCommandUsage();
 
 int main(int argc, char** argv)
 {
+	const char* filename = NULL;
 	setupCommands();
 
-	if (argc >= 2)
+	for ( int i = 1; i < argc; i++ )
 	{
-		Assembler assembler;
-		std::cout << argv[0] << std::endl;
-		if (assembler.assemble(argv[1]))
+		if ( strcmp( "--help", argv[i] ) == 0 || strcmp( "--h", argv[i] ) == 0 )
 		{
-			std::cout << argv[1] << " assembled correctly to a .rom file" << std::endl;
+			printCommandUsage();
+			return 1;
+		}
+		else
+		{
+			filename = argv[i];
 		}
 	}
-	else
+
+	if ( ! filename )
 	{
-		printCommandUsage();
-		std::cout << "Need file path\n";
+		printf( "ERROR: No file supplied.\n" );
+		return 1;
+	}
+
+	Assembler assembler;
+	if ( assembler.assemble( filename ) )
+	{
+		std::cout << filename << " assembled correctly to a .rom file" << std::endl;
 	}
 
 	return 0;
@@ -76,6 +87,7 @@ void setupCommands()
 	commandStrings[COLON] = "colon";
 	commandStrings[DOT] = "dot";
 	commandStrings[SECTION_LABEL] = "section label";
+	commandStrings[DATA] = "data";
 
 	//commandTable = new uint16_t**[NUMBER_COMMAND_TYPE];
 	for (int i = 0; i < NUMBER_COMMAND_TYPE; i++)
@@ -115,6 +127,7 @@ void setupCommands()
 	commandTable(SNK,DATA_REGISTER,NONE) = 0xE0A1;
 	commandTable(WTK,DATA_REGISTER,NONE) = 0xF00A;
 
+	commandTable(MOV,MEMORY_REGISTER, INSTRUCTION_LABEL ) = 0xA000;
 	commandTable(MOV,MEMORY_REGISTER,LITERAL) = 0xA000;
 	commandTable(MOV,SOUND_TIMER,DATA_REGISTER) = 0xF018;
 	commandTable(MOV,DELAY_TIMER,DATA_REGISTER) = 0xF015;
@@ -129,6 +142,7 @@ void setupCommands()
 	commandTable(SUB,DATA_REGISTER,DATA_REGISTER) = 0x8005;
 
 	commandTable(MJMP,LITERAL,NONE) = 0xB000;
+	commandTable(MJMP, INSTRUCTION_LABEL,NONE) = 0xB000;
 	commandTable(DRAW,DATA_REGISTER,DATA_REGISTER) = 0xD000;
 	commandTable(RND,DATA_REGISTER,LITERAL) = 0xC000;
 	commandTable(SPT,DATA_REGISTER,NONE) = 0xF029;
@@ -173,7 +187,9 @@ void printCommandUsage()
 	for (int i = CLR; i < COMMA; i++)
 	{
 		std::cout << "=======================" << std::endl;
-		std::cout << commandDescription[i] << std::endl;
+		printf( "INSTRUCTION: %s\n", commandStrings[i] );
+		printf( "DESCRIPTION: %s\n", commandDescription[i] );
+		printf( "OPERANDS: \n" );
 		for (int j = 0; j < 7; j++)
 		{
 			for (int k = 0; k < 7; k++)
@@ -181,18 +197,18 @@ void printCommandUsage()
 				uint16_t code = commandTable(i, j, k);
 				if (code)
 				{
-					std::cout << commandStrings[i];
+					std::cout << "\t" << commandStrings[i];
 					if (j != NONE)
 					{
-						std::cout << " " << commandStrings[j];
+						std::cout << "\t" << commandStrings[j];
 
 						if (k != NONE)
 						{
-							std::cout << "," << commandStrings[k];
+							std::cout << ",\t" << commandStrings[k];
 
 							if (i == DRAW)
 							{
-								std::cout << "," << commandStrings[LITERAL];
+								std::cout << ",\t" << commandStrings[LITERAL];
 							}
 						}
 							

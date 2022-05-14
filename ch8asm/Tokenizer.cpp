@@ -6,76 +6,82 @@ Tokenizer::Tokenizer()
 
 }
 
-void Tokenizer::tokenize(const std::vector<std::string>& lexemes, std::vector<Token>& tokens)
+void Tokenizer::tokenize(const std::vector<Lexeme>& lexemes, std::vector<Token>& tokens)
 {
 	for (int i = 0; i < lexemes.size(); i++)
 	{
-		const std::string& s = lexemes[i];
+		std::string s = lexemes[i].text;
+		Tokenizer::toLower( s ); //make it lowercase for comparison.
+
 		Token token;
-		if (s == commandStrings[CLR])
+		token.lineNumber = lexemes[i].lineNumber;
+
+		if ( s == commandStrings[CLR] )
 			token.type = CLR;
-		else if (s == commandStrings[RET])
+		else if ( s == commandStrings[RET] )
 			token.type = RET;
-		else if (s == commandStrings[JMP])
+		else if ( s == commandStrings[JMP] )
 			token.type = JMP;
-		else if (s == commandStrings[CALL])
+		else if ( s == commandStrings[CALL] )
 			token.type = CALL;
-		else if (s == commandStrings[SE])
+		else if ( s == commandStrings[SE] )
 			token.type = SE;
-		else if (s == commandStrings[SNE])
+		else if ( s == commandStrings[SNE] )
 			token.type = SNE;
-		else if (s == commandStrings[MOV])
+		else if ( s == commandStrings[MOV] )
 			token.type = MOV;
-		else if (s == commandStrings[ADD])
+		else if ( s == commandStrings[ADD] )
 			token.type = ADD;
-		else if (s == commandStrings[OR])
+		else if ( s == commandStrings[OR] )
 			token.type = OR;
-		else if (s == commandStrings[AND])
+		else if ( s == commandStrings[AND] )
 			token.type = AND;
-		else if (s == commandStrings[XOR])
+		else if ( s == commandStrings[XOR] )
 			token.type = XOR;
-		else if (s == commandStrings[SUB])
+		else if ( s == commandStrings[SUB] )
 			token.type = SUB;
-		else if (s == commandStrings[SHR])
+		else if ( s == commandStrings[SHR] )
 			token.type = SHR;
-		else if (s == commandStrings[SHL])
+		else if ( s == commandStrings[SHL] )
 			token.type = SHL;
-		else if (s == commandStrings[SUBO])
+		else if ( s == commandStrings[SUBO] )
 			token.type = SUBO;
-		else if (s == commandStrings[SPT])
+		else if ( s == commandStrings[SPT] )
 			token.type = SPT;
-		else if (s == commandStrings[BCD])
+		else if ( s == commandStrings[BCD] )
 			token.type = BCD;
-		else if (s == commandStrings[DUMP])
+		else if ( s == commandStrings[DUMP] )
 			token.type = DUMP;
-		else if (s == commandStrings[LOAD])
+		else if ( s == commandStrings[LOAD] )
 			token.type = LOAD;
-		else if (s == commandStrings[DRAW])
+		else if ( s == commandStrings[DRAW] )
 			token.type = DRAW;
-		else if (s == commandStrings[MJMP])
+		else if ( s == commandStrings[MJMP] )
 			token.type = MJMP;
-		else if (s == commandStrings[SNK])
+		else if ( s == commandStrings[SNK] )
 			token.type = SNK;
-		else if (s == commandStrings[SK])
+		else if ( s == commandStrings[SK] )
 			token.type = SK;
-		else if (s == commandStrings[WTK])
+		else if ( s == commandStrings[WTK] )
 			token.type = WTK;
-		else if (s == commandStrings[SOUND_TIMER])
+		else if ( s == commandStrings[SOUND_TIMER] )
 			token.type = SOUND_TIMER;
-		else if (s == commandStrings[DELAY_TIMER])
+		else if ( s == commandStrings[DELAY_TIMER] )
 			token.type = DELAY_TIMER;
-		else if (s == commandStrings[MEMORY_REGISTER])
+		else if ( s == commandStrings[MEMORY_REGISTER] )
 			token.type = MEMORY_REGISTER;
-		else if (s == commandStrings[RND])
+		else if ( s == commandStrings[RND] )
 			token.type = RND;
-		else if (s[0] == commandStrings[DATA_REGISTER][0])
-			processDataRegister(token, s);
-		else if (s == ",")
+		else if ( s[0] == commandStrings[DATA_REGISTER][0] )
+			processDataRegister( token, s );
+		else if ( s == "," )
 			token.type = COMMA;
-		else if (s == ":")
+		else if ( s == ":" )
 			token.type = COLON;
-		else if (s == ".")
+		else if ( s == "." )
 			token.type = DOT;
+		else if ( s == commandStrings[DATA] )
+			token.type = DATA;
 		else
 			processLabelOrLiteral(token, s);
 
@@ -120,6 +126,12 @@ void Tokenizer::processLabelOrLiteral(Token& token, const std::string& s)
 	else
 	{
 		//token.data.text = s;
+		if ( strlen( s.c_str() ) >= LABEL_SIZE )
+		{
+			printf( "ERROR: Label too long!\n" );
+			exit( 1 );
+		}
+
 		strcpy_s(token.data.text, s.c_str());
 		token.type = INSTRUCTION_LABEL;
 	}

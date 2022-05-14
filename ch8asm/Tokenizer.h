@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <cinttypes>
+#include "Lexer.h"
 enum Type
 {
 	NONE,
@@ -40,26 +41,39 @@ enum Type
 	COLON,
 	DOT,
 	SECTION_LABEL, //.something
+	DATA,
 	NUMBER_COMMAND_TYPE
 };
+
+#define LABEL_SIZE 40
 
 struct Token
 {
 	union Data
 	{
-		char text[20];
+		char text[LABEL_SIZE];
 		uint16_t value;
 	} data;
 	Type type;
 	uint16_t address;
+	int lineNumber;
 };
 
 class Tokenizer
 {
 public:
 	Tokenizer();
-	void tokenize(const std::vector<std::string>& lexemes, std::vector<Token>& tokens);
+	void tokenize(const std::vector<Lexeme>& lexemes, std::vector<Token>& tokens);
 	void processDataRegister(Token& token, const std::string& s);
 	void processLabelOrLiteral(Token& token, const std::string& s);
 private:
+	static inline void toLower( std::string& s );
 };
+
+void Tokenizer::toLower( std::string& s )
+{
+	for ( int i = 0; i < s.size(); i++ )
+	{
+		s[i] = tolower( s[i] );
+	}
+}

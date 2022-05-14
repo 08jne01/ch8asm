@@ -14,9 +14,10 @@ Lexer::~Lexer()
 void Lexer::lex
 (
 	const std::string& text,
-	std::vector<std::string>& s
+	std::vector<Lexeme>& s
 )
 {
+	m_lineNumber = 1;
 	m_textIndex = 0;
 	m_lexemeIndex = 0;
 	m_state = START;
@@ -54,7 +55,10 @@ void Lexer::lex
 	if (m_lexemeIndex > 0)
 	{
 		buffer[m_lexemeIndex] = 0;
-		s.push_back(buffer);
+		Lexeme l;
+		l.text = buffer;
+		l.lineNumber = m_lineNumber;
+		s.push_back(l);
 	}
 }
 
@@ -83,7 +87,7 @@ void Lexer::start(const std::string& text)
 	}
 }
 
-void Lexer::readChar(const std::string& text, std::vector<std::string>& s)
+void Lexer::readChar(const std::string& text, std::vector<Lexeme>& s)
 {
 	if (isSpace(text[m_textIndex]))
 		m_state = DUMP;
@@ -146,18 +150,24 @@ void Lexer::readBlock(const std::string& text)
 
 void Lexer::skip(const std::string& text)
 {
-	if (isSpace(text[m_textIndex]))
+	if ( isSpace( text[m_textIndex] ) )
+	{
+		addLine( text[m_textIndex] );
 		m_textIndex++;
+	}
 	else
 		m_state = READCHAR;
 }
 
-void Lexer::dump(const std::string& text, std::vector<std::string>& s)
+void Lexer::dump(const std::string& text, std::vector<Lexeme>& s)
 {
 	if (m_lexemeIndex > 0)
 	{
 		buffer[m_lexemeIndex] = 0;
-		s.push_back(buffer);
+		Lexeme l;
+		l.text = buffer;
+		l.lineNumber = m_lineNumber;
+		s.push_back(l);
 		m_lexemeIndex = 0;
 	}
 	m_state = START;

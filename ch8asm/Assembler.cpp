@@ -13,7 +13,7 @@ bool Assembler::assemble(const char* filename)
 	std::ifstream file(filename);
 	std::string content((std::istreambuf_iterator<char>(file)), (std::istreambuf_iterator<char>()));
 	file.close();
-	std::vector<std::string> lexemes;
+	std::vector<Lexeme> lexemes;
 	Lexer lexer;
 	lexer.lex(content, lexemes);
 
@@ -104,13 +104,24 @@ void Assembler::dumpToken(const std::vector<Token>& tokens)
 		return;
 
 	uint16_t code = 0;
-	if (m_tokenBuffer.size() == 1)
+
+	if ( m_tokenBuffer[0].type == DATA )
+	{
+		for ( int i = 1; i < m_tokenBuffer.size(); i++ )
+		{
+			addByte( (uint8_t)m_tokenBuffer[i].data.value );
+		}
+	}
+	else if (m_tokenBuffer.size() == 1)
 	{
 		code = commandTable(m_tokenBuffer[0].type,NONE,NONE);
 		if (!code)
 		{
 			m_state = State::ERROR;
-			std::cout << "Invalid Operand " << commandStrings[m_tokenBuffer[0].type] << std::endl;
+			printf( "(%d) ERROR Invalid Operand(s): %s\n", 
+				m_tokenBuffer[0].lineNumber, 
+				commandStrings[m_tokenBuffer[0].type] );
+			//std::cout << "Invalid Operand " << commandStrings[m_tokenBuffer[0].type] << std::endl;
 		}
 
 		addBytes(code);
@@ -121,7 +132,11 @@ void Assembler::dumpToken(const std::vector<Token>& tokens)
 		if (!code)
 		{
 			m_state = State::ERROR;
-			std::cout << "Invalid Operand " << commandStrings[m_tokenBuffer[0].type] << "," << commandStrings[m_tokenBuffer[1].type] << std::endl;
+			printf( "(%d) ERROR Invalid Operand(s): %s %s\n",
+				m_tokenBuffer[0].lineNumber,
+				commandStrings[m_tokenBuffer[0].type],
+				commandStrings[m_tokenBuffer[1].type] );
+			//std::cout << "Invalid Operand " << commandStrings[m_tokenBuffer[0].type] << "," << commandStrings[m_tokenBuffer[1].type] << std::endl;
 		}
 
 		if (m_tokenBuffer[1].type == DATA_REGISTER)
@@ -141,7 +156,12 @@ void Assembler::dumpToken(const std::vector<Token>& tokens)
 		if (!code)
 		{
 			m_state = State::ERROR;
-			std::cout << "Invalid Operand " << commandStrings[m_tokenBuffer[0].type] << "," << commandStrings[m_tokenBuffer[1].type] << "," << commandStrings[m_tokenBuffer[2].type] << std::endl;
+			printf( "(%d) ERROR Invalid Operand(s): %s %s, %s\n",
+				m_tokenBuffer[0].lineNumber,
+				commandStrings[m_tokenBuffer[0].type],
+				commandStrings[m_tokenBuffer[1].type], 
+				commandStrings[m_tokenBuffer[2].type] );
+			//std::cout << "Invalid Operand " << commandStrings[m_tokenBuffer[0].type] << "," << commandStrings[m_tokenBuffer[1].type] << "," << commandStrings[m_tokenBuffer[2].type] << std::endl;
 		}
 		uint16_t codeCopy = code;
 		code |= (m_tokenBuffer[1].data.value & 0x000F) << 8;
@@ -149,8 +169,12 @@ void Assembler::dumpToken(const std::vector<Token>& tokens)
 		{
 			if (m_tokenBuffer[0].type == MOV)
 			{
+				uint16_t address = checkTokenBufferZNNN( "change-me" );
 				code = codeCopy;
-				code |= (m_tokenBuffer[2].data.value & 0x0FFF);
+				if ( address )
+					code |= (address & 0x0FFF);
+				/*code = codeCopy;
+				code |= (m_tokenBuffer[2].data.value & 0x0FFF);*/
 			}
 			else if (m_tokenBuffer[0].type == ADD)
 			{
@@ -184,7 +208,13 @@ void Assembler::dumpToken(const std::vector<Token>& tokens)
 		if (!code)
 		{
 			m_state = State::ERROR;
-			std::cout << "Invalid Operand " << commandStrings[m_tokenBuffer[0].type] << "," << commandStrings[m_tokenBuffer[1].type] << "," << commandStrings[m_tokenBuffer[2].type] << "," << commandStrings[m_tokenBuffer[3].type] << std::endl;
+			printf( "(%d) ERROR Invalid Operand(s): %s %s, %s, %s\n",
+				m_tokenBuffer[0].lineNumber,
+				commandStrings[m_tokenBuffer[0].type],
+				commandStrings[m_tokenBuffer[1].type],
+				commandStrings[m_tokenBuffer[2].type],
+				commandStrings[m_tokenBuffer[3].type] );
+			//std::cout << "Invalid Operand " << commandStrings[m_tokenBuffer[0].type] << "," << commandStrings[m_tokenBuffer[1].type] << "," << commandStrings[m_tokenBuffer[2].type] << "," << commandStrings[m_tokenBuffer[3].type] << std::endl;
 		}
 		code |= (m_tokenBuffer[1].data.value & 0x00F) << 8;
 		code |= (m_tokenBuffer[2].data.value & 0x00F) << 4;
@@ -254,19 +284,36 @@ bool Assembler::isOperand(const Token& token)
 void Assembler::processLabels(std::vector<Token>& tokens)
 {
 	int instructionOffset = 0;
+	bool addDataOffset = false;
 	for (int i = 0; i < tokens.size(); i++)
 	{
-		if (tokens[i].type == INSTRUCTION_LABEL)
+		if ( addDataOffset )
+		{
+			if ( tokens[i].type == LITERAL )
+				instructionOffset++;
+			else
+				addDataOffset = false;
+		}
+		else if (tokens[i].type == INSTRUCTION_LABEL)
 		{
 			tokens[i].address = instructionOffset + 0x200;
 			if (i > 0 && tokens[i - 1].type == DOT)
 				m_labels.push_back(tokens[i]);
 		}
-		else if (isOperator(tokens[i]))
+		else if ( tokens[i].type == DATA )
+		{
+			addDataOffset = true;
+		}
+		else if (isOperator(tokens[i])) //since data does not add any instructions
 		{
 			instructionOffset += 2;
 		}
 	}
+}
+
+void Assembler::addByte( uint8_t byte )
+{
+	m_binary.push_back( byte );
 }
 
 void Assembler::addBytes(uint16_t word)
@@ -303,28 +350,39 @@ void Assembler::addBytesForZXYN(uint16_t z, uint16_t x, uint16_t y, uint16_t n)
 
 uint16_t Assembler::checkTokenBufferZNNN(const char* error)
 {
-	if (m_tokenBuffer.size() != 2 || (m_tokenBuffer[1].type != LITERAL && m_tokenBuffer[1].type != INSTRUCTION_LABEL))
+	int type = m_tokenBuffer[1].type == MEMORY_REGISTER ? 2 : 1;
+
+	if ( m_tokenBuffer.size() != type+1 || (m_tokenBuffer[type].type != LITERAL && m_tokenBuffer[type].type != INSTRUCTION_LABEL) )
 	{
-		std::cout << error << " error" << std::endl;
+		//std::cout << error << " error" << std::endl;
+		printf( "(%d) ERROR Wrong instruction for address operand.\n", m_tokenBuffer[0].lineNumber );
 		m_state = State::ERROR;
 		return false;
 	}
 
 	uint16_t address;
-	if (m_tokenBuffer[1].type == INSTRUCTION_LABEL)
+	if (m_tokenBuffer[type].type == INSTRUCTION_LABEL)
 	{
-		address = findAddress(m_tokenBuffer[1].data.text);
+		address = findAddress(m_tokenBuffer[type].data.text);
+		if ( ! address )
+		{
+			//std::cout << error << " error, address was not found or NULL" << std::endl;
+			printf( "(%d) ERROR: Address was not found for label %s.\n", m_tokenBuffer[0].lineNumber, m_tokenBuffer[type].data.text );
+			m_state = State::ERROR;
+		}
 	}
 	else
 	{
-		address = m_tokenBuffer[1].data.value;
+		address = m_tokenBuffer[type].data.value;
+		if ( ! address )
+		{
+			//std::cout << error << " error, address was not found or NULL" << std::endl;
+			printf( "(%d) ERROR: Address was NULL\n", m_tokenBuffer[0].lineNumber );
+			m_state = State::ERROR;
+		}
 	}
 
-	if (!address)
-	{
-		std::cout << error << " error, address was not found or NULL" << std::endl;
-		m_state = State::ERROR;
-	}
+	
 	return address;
 }
 

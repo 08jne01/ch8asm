@@ -1,0 +1,145 @@
+jmp instruction_3
+data 0xFF 0xFF; data to break
+
+
+
+
+.instruction_3
+;draw number
+mov v0, 0
+mov v1, 1
+mov ptr number3
+draw v0, v1, 5
+
+;test
+mov v0, 5
+mov v1, 2
+se v1, 2
+jmp fail
+mov ptr, tick
+draw v0, v1, 3
+
+.instruction_4
+;draw number
+mov v0, 0
+mov v1, 7
+mov ptr number4
+draw v0, v1, 5
+
+;test
+mov v0, 5
+mov v1, 8
+sne v1, 0
+jmp fail
+mov ptr, tick
+draw v0, v1, 3
+
+.instruction_5
+;draw number
+mov v0, 0
+mov v1, 13
+mov ptr number5
+draw v0, v1, 5
+
+mov v0, 5
+mov v1, 14
+mov v3, 5
+mov v4, 5
+se v3, v4
+jmp fail
+mov ptr, tick
+draw v0, v1, 3
+
+.instruction_9
+;draw number
+mov v0, 0
+mov v1, 19
+mov ptr number9
+draw v0, v1, 5
+
+mov v0, 5
+mov v1, 20
+sne v0, v1
+jmp fail
+mov ptr, tick
+draw v0, v1, 3
+
+.instruction_2
+mov v0, 0
+mov v1, 24
+mov ptr number2
+draw v0, v1, 5
+
+mov v0, 5
+mov v1, 25
+mov v3, 0
+call instruction_2and0
+draw v0, v1, 3
+
+.instruction_2and0_back
+;se v3, 1
+;jmp fail
+;mov ptr, tick
+;draw v0, v1, 3
+;jmp 
+
+;.instruction_2and0
+;mov v3, 1
+;jmp instruction_2and0_back
+;.instruction0ret
+;mov v0, 8
+;mov v1, 1
+;mov ptr number0
+;draw v0, v1, 5
+;ret
+;jmp fail
+
+data 0x00
+
+
+
+
+
+
+.fail
+mov ptr, cross
+draw v0, v1, 3
+jmp halt
+
+
+.halt
+jmp halt
+
+.number0
+data 0xE0 0xA0 0xA0 0xA0 0xE0
+.number2
+data 0xE0 0x20 0xE0 0x80 0xE0
+.number3
+data 0xE0 0x20 0x60 0x20 0xE0
+.number4
+data 0xA0 0xA0 0xE0 0x20 0x20
+.number5
+data 0xE0 0x80 0xE0 0x20 0xE0
+.number6
+data 0xE0 0x80 0xE0 0xA0 0xE0
+.number7
+data 0xE0 0x20 0x20 0x20 0x20
+.number8
+data 0xE0 0xA0 0xE0 0xA0 0xE0
+.number9
+data 0xE0 0xA0 0xE0 0x20 0xE0
+.numberA
+data 0xE0 0xA0 0xE0 0x20 0xE0
+
+; x x
+;  x
+; x x
+.cross
+data 0x50 0x20 0x50 0x00
+
+;   x
+;x x
+; x
+;
+.tick
+data 0x10 0xA0 0x40

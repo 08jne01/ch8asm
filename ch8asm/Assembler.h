@@ -36,6 +36,7 @@ private:
 	void processLabels(std::vector<Token>& tokens);
 
 	//Utility
+	void addByte( uint8_t byte );
 	void addBytes(uint16_t word);
 	void addBytesForZNNN(uint16_t z, uint16_t nnn);
 	void addBytesForZXNN(uint16_t z, uint16_t x, uint16_t nn);
