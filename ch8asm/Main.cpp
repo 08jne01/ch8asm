@@ -186,10 +186,10 @@ void printCommandUsage()
 {
 	for (int i = CLR; i < COMMA; i++)
 	{
-		std::cout << "=======================" << std::endl;
-		printf( "INSTRUCTION: %s\n", commandStrings[i] );
-		printf( "DESCRIPTION: %s\n", commandDescription[i] );
-		printf( "OPERANDS: \n" );
+		std::cout << "****************************************************" << std::endl;
+		printf( "Instruction : %s \n", commandStrings[i] );
+		printf( "Description : %s \n", commandDescription[i] );
+		printf( "Operands : \n" );
 		for (int j = 0; j < 7; j++)
 		{
 			for (int k = 0; k < 7; k++)
